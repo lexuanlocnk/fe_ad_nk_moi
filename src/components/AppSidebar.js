@@ -16,7 +16,8 @@ import { AppSidebarNav } from './AppSidebarNav'
 
 import { sygnet } from '../assets/brand/sygnet'
 
-import logo from '../assets/images/logo/logo CN.png'
+import logo_vien from '../assets/images/logo/nk viền.png'
+import logo from '../assets/images/logo/logo NK.png'
 
 // sidebar nav config
 import navigation from '../_nav'
@@ -40,11 +41,13 @@ const AppSidebar = () => {
     >
       <CSidebarHeader className="border-bottom" style={{ justifyContent: 'center', padding: 0 }}>
         <CSidebarBrand to="/">
-          <Link to={'/'}>
-            <CImage rounded src={logo} width={150} />
-          </Link>
-          <CIcon customClassName="sidebar-brand-narrow" icon={sygnet} height={32} />
-          {/* <CImage customClassName="sidebar-brand-narrow" rounded src={logo} width={30} /> */}
+          {unfoldable ? (
+            <CImage customClassName="sidebar-brand-narrow" rounded src={logo} width={50} />
+          ) : (
+            <Link to={'/'}>
+              <CImage rounded src={logo_vien} width={80} />
+            </Link>
+          )}
         </CSidebarBrand>
         <CCloseButton
           className="d-lg-none"

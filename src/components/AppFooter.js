@@ -5,15 +5,15 @@ const AppFooter = () => {
   return (
     <CFooter className="px-4">
       <div>
-        <a href="https://chinhnhan.net" target="_blank" rel="noopener noreferrer">
-          Chính Nhân
+        <a href="https://vitinhnguyenkim.vn" target="_blank" rel="noopener noreferrer">
+          Nguyên Kim
         </a>
-        <span className="ms-1">&copy; 2024 chinhnhan.vn | https://chinhnhan.net</span>
+        <span className="ms-1">&copy; 2025 Nguyên Kim Computer | https://vitinhnguyenkim.vn</span>
       </div>
       <div className="ms-auto">
         <span className="me-1">Powered by</span>
-        <a href="https://chinhnhan.net" target="_blank" rel="noopener noreferrer">
-          chinhnhan-it
+        <a href="https://vitinhnguyenkim.vn" target="_blank" rel="noopener noreferrer">
+          NKC-IT-GROUP
         </a>
       </div>
     </CFooter>
