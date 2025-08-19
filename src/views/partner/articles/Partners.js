@@ -13,15 +13,14 @@ import {
 import React, { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { axiosClient, imageBaseUrl } from '../../../axiosConfig'
-import moment from 'moment/moment'
 
 import ReactPaginate from 'react-paginate'
 import DeletedModal from '../../../components/deletedModal/DeletedModal'
 import { toast } from 'react-toastify'
 
-import './css/news.scss'
+import './css/partners.scss'
 
-function News() {
+function Partners() {
   const navigate = useNavigate()
 
   const [searchParams, setSearchParams] = useSearchParams()
@@ -34,13 +33,13 @@ function News() {
     setSearchParams({ page: pageNumber })
   }, [pageNumber, setSearchParams])
 
-  const [dataNews, setDataNews] = useState([])
-
   // check permission state
   const [isPermissionCheck, setIsPermissionCheck] = useState(true)
 
-  const [dataNewsCategory, setDataNewsCategroy] = useState([])
+  const [dataPartnersCategory, setDataPartnersCategory] = useState([])
   const [selectedCategory, setSelectedCategory] = useState('')
+
+  const [dataPartners, setDataPartners] = useState([])
 
   // show deleted Modal
   const [visible, setVisible] = useState(false)
@@ -60,53 +59,71 @@ function News() {
   const [dataSearch, setDataSearch] = useState('')
 
   const handleAddNewClick = () => {
-    navigate('/news/add')
+    navigate('/partners/article/add')
   }
 
   const handleEditClick = (id) => {
-    navigate(`/news/edit?id=${id}`)
+    navigate(`/partners/article/edit?id=${id}`)
   }
 
   // search Data
   const handleSearch = (keyword) => {
-    fetchDataNews(keyword)
+    fetchDataPartners(keyword)
   }
 
-  const fetchDataNewsCategory = async () => {
+  const fetchDataPartnersCategory = async (signal) => {
     try {
-      const response = await axiosClient.get(`admin/news-category`)
+      const response = await axiosClient.get(`admin/news-category`, { signal })
       if (response.data.status === true) {
-        setDataNewsCategroy(response.data.list)
+        setDataPartnersCategory(response.data.list)
       }
     } catch (error) {
-      console.error('Fetch data news is error', error)
+      if (
+        error.name !== 'CanceledError' &&
+        error.name !== 'AbortError' &&
+        error.code !== 'ERR_CANCELED'
+      ) {
+        console.error('Fetch data partners categories is error', error)
+      }
     }
   }
 
   useEffect(() => {
-    fetchDataNewsCategory()
+    const controller = new AbortController()
+    fetchDataPartnersCategory(controller.signal)
+    return () => controller.abort()
   }, [])
 
-  const fetchDataNews = async (dataSearch = '') => {
+  const fetchDataPartners = async (dataSearch = '', signal) => {
     try {
       const response = await axiosClient.get(
         `admin/news?data=${dataSearch}&page=${pageNumber}&category=${selectedCategory}`,
+        { signal },
       )
 
       if (response.data.status === true) {
-        setDataNews(response.data.list)
+        setDataPartners(response.data.list)
       }
 
       if (response.data.status === false && response.data.mess == 'no permission') {
         setIsPermissionCheck(false)
       }
     } catch (error) {
-      console.error('Fetch promotion news data is error', error)
+      if (
+        error.name !== 'CanceledError' &&
+        error.name !== 'AbortError' &&
+        error.code !== 'ERR_CANCELED'
+      ) {
+        console.error('Fetch partners data is error', error)
+      }
     }
   }
 
   useEffect(() => {
-    fetchDataNews()
+    const controller = new AbortController()
+    fetchDataPartners(dataSearch, controller.signal)
+    return () => controller.abort()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageNumber, selectedCategory])
 
   // pagination data
@@ -123,27 +140,26 @@ function News() {
       const response = await axiosClient.delete(`admin/news/${deletedId}`)
       if (response.data.status === true) {
         setVisible(false)
-        fetchDataNews()
+        fetchDataPartners()
       }
 
       if (response.data.status === false && response.data.mess == 'no permission') {
         toast.warn('Bạn không có quyền thực hiện tác vụ này!')
       }
     } catch (error) {
-      console.error('Delete news id is error', error)
+      console.error('Delete partners id is error', error)
       toast.error('Đã xảy ra lỗi khi xóa. Vui lòng thử lại!')
     }
   }
 
-  // Long làm liền
   const handleDeleteSelectedCheckbox = async () => {
     try {
-      const response = await axiosClient.post('admin/delete-all-news', {
+      const response = await axiosClient.post('admin/delete-all-partners', {
         data: selectedCheckbox,
       })
       if (response.data.status === true) {
         toast.success('Xóa tất cả các mục thành công!')
-        fetchDataNews()
+        fetchDataPartners()
         setSelectedCheckbox([])
       }
     } catch (error) {
@@ -152,23 +168,23 @@ function News() {
   }
 
   const items =
-    dataNews?.data && dataNews?.data?.length > 0
-      ? dataNews?.data.map((item) => ({
+    dataPartners?.data && dataPartners?.data?.length > 0
+      ? dataPartners?.data.map((item) => ({
           id: (
             <CFormCheck
-              key={item?.news_id}
+              key={item?.partners_id}
               aria-label="Default select example"
-              defaultChecked={item?.news_id}
-              id={`flexCheckDefault_${item?.news_id}`}
-              value={item?.news_id}
-              checked={selectedCheckbox.includes(item?.news_id)}
+              defaultChecked={item?.partners_id}
+              id={`flexCheckDefault_${item?.partners_id}`}
+              value={item?.partners_id}
+              checked={selectedCheckbox.includes(item?.partners_id)}
               onChange={(e) => {
-                const newsId = item?.news_id
+                const partnersId = item?.partners_id
                 const isChecked = e.target.checked
                 if (isChecked) {
-                  setSelectedCheckbox([...selectedCheckbox, newsId])
+                  setSelectedCheckbox([...selectedCheckbox, partnersId])
                 } else {
-                  setSelectedCheckbox(selectedCheckbox.filter((id) => id !== newsId))
+                  setSelectedCheckbox(selectedCheckbox.filter((id) => id !== partnersId))
                 }
               }}
             />
@@ -198,16 +214,10 @@ function News() {
             />
           ),
           cate: <div className="cate-color">{item?.category_desc?.[0].cat_name}</div>,
-          info: (
-            <div>
-              <span>{item?.views} lượt xem</span>
-              <div>{moment.unix(item?.date_post).format('DD-MM-YYYY')}</div>
-            </div>
-          ),
           actions: (
             <div className="d-flex">
               <button
-                onClick={() => handleEditClick(item.news_id)}
+                onClick={() => handleEditClick(item.partners_id)}
                 className="button-action mr-2 bg-info"
               >
                 <CIcon icon={cilColorBorder} className="text-white" />
@@ -215,7 +225,7 @@ function News() {
               <button
                 onClick={() => {
                   setVisible(true)
-                  setDeletedId(item.news_id)
+                  setDeletedId(item.partners_id)
                 }}
                 className="button-action bg-danger"
               >
@@ -239,7 +249,7 @@ function News() {
               const isChecked = e.target.checked
               setIsAllCheckbox(isChecked)
               if (isChecked) {
-                const allIds = dataNews?.data.map((item) => item.news_id) || []
+                const allIds = dataPartners?.data.map((item) => item.partners_id) || []
                 setSelectedCheckbox(allIds)
               } else {
                 setSelectedCheckbox([])
@@ -266,11 +276,6 @@ function News() {
       _props: { scope: 'col' },
     },
     {
-      key: 'info',
-      label: 'Thông tin',
-      _props: { scope: 'col' },
-    },
-    {
       key: 'actions',
       label: 'Tác vụ',
       _props: { scope: 'col' },
@@ -292,7 +297,7 @@ function News() {
 
           <CRow className="mb-3">
             <CCol>
-              <h3>QUẢN LÝ TIN TỨC</h3>
+              <h3>QUẢN LÝ BÀI ĐĂNG ĐỐI TÁC</h3>
             </CCol>
             <CCol md={6}>
               <div className="d-flex justify-content-end">
@@ -305,17 +310,12 @@ function News() {
                 >
                   Thêm mới
                 </CButton>
-                <Link to={'/promotion-news'}>
-                  <CButton color="primary" type="submit" size="sm">
-                    Danh sách
-                  </CButton>
-                </Link>
               </div>
             </CCol>
           </CRow>
 
           <CRow>
-            {/* <Search count={dataNews?.total} onSearchData={handleSearch} /> */}
+            {/* <Search count={dataPartners?.total} onSearchData={handleSearch} /> */}
 
             <CCol>
               <table className="filter-table">
@@ -335,7 +335,7 @@ function News() {
                   <tbody>
                     <tr>
                       <td>Tổng cộng</td>
-                      <td className="total-count">{dataNews?.total}</td>
+                      <td className="total-count">{dataPartners?.total}</td>
                     </tr>
                     <tr>
                       <td>Lọc theo vị trí</td>
@@ -345,9 +345,9 @@ function News() {
                           aria-label="Chọn yêu cầu lọc"
                           options={[
                             { label: 'Chọn danh mục', value: '' },
-                            ...(dataNewsCategory && dataNewsCategory.length > 0
-                              ? dataNewsCategory.map((group) => ({
-                                  label: group?.news_category_desc?.cat_name,
+                            ...(dataPartnersCategory && dataPartnersCategory.length > 0
+                              ? dataPartnersCategory.map((group) => ({
+                                  label: group?.partners_category_desc?.cat_name,
                                   value: group.cat_id,
                                 }))
                               : []),
@@ -388,7 +388,7 @@ function News() {
 
             <div className="d-flex justify-content-end">
               <ReactPaginate
-                pageCount={Math.ceil(dataNews?.total / dataNews?.per_page)}
+                pageCount={Math.ceil(dataPartners?.total / dataPartners?.per_page)}
                 pageRangeDisplayed={3}
                 marginPagesDisplayed={1}
                 pageClassName="page-item"
@@ -405,7 +405,7 @@ function News() {
                 activeClassName={'active'}
                 previousLabel={'<<'}
                 nextLabel={'>>'}
-                forcePage={pageNumber - 1} // Đảm bảo pagination hiển thị đúng trang hiện tại
+                forcePage={pageNumber - 1}
               />
             </div>
           </CRow>
@@ -415,4 +415,4 @@ function News() {
   )
 }
 
-export default News
+export default Partners

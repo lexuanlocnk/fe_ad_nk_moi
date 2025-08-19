@@ -15,6 +15,13 @@ const AdminUpdateExcelPrice = React.lazy(() => import('./views/admin/AdminExcelU
 const PermissionGroup = React.lazy(() => import('./views/admin/PermissionGroup'))
 const EditPermission = React.lazy(() => import('./views/admin/EditPermissions'))
 
+// PARTNER
+const PartnerCategories = React.lazy(() => import('./views/partner/category/PartnerCategories'))
+
+const AddPartnerArticle = React.lazy(() => import('./views/partner/articles/AddPartnerArticle'))
+const EditPartnerArticle = React.lazy(() => import('./views/partner/articles/EditPartnerArticle'))
+const Partners = React.lazy(() => import('./views/partner/articles/Partners'))
+
 // PRODUCT
 const ProductOutOfSync = React.lazy(() => import('./views/product/productOutOfSync.js'))
 const ProductBrand = React.lazy(() => import('./views/product/productBrand'))
@@ -240,6 +247,35 @@ const routes = [
     path: '/admin/groups/edit',
     name: 'EditPermission',
     element: EditPermission,
+    exact: true,
+  },
+
+  // PARTNER
+  {
+    path: '/partner/categories',
+    name: 'PartnerCategories',
+    element: PartnerCategories,
+    exact: true,
+  },
+
+  {
+    path: '/partner/article/add',
+    name: 'AddPartnerArticle',
+    element: AddPartnerArticle,
+    exact: true,
+  },
+
+  {
+    path: '/partner/article/edit',
+    name: 'EditPartnerArticle',
+    element: EditPartnerArticle,
+    exact: true,
+  },
+
+  {
+    path: '/partner/articles',
+    name: 'Partners',
+    element: Partners,
     exact: true,
   },
 

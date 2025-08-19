@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react'
+import vi from 'date-fns/locale/vi'
+import { getYear, getMonth } from 'date-fns'
 
 import {
   CButton,
@@ -296,10 +298,18 @@ function OrderList() {
                 <span>Email: </span>
                 <span className="customer-email">{order.d_email}</span>
               </div>
-              {/* <div>
-                <span>Địa chỉ: </span>
-                <span className="customer-email">{order.d_email}</span>
-              </div> */}
+              <div>
+                <span>Mã KH: </span>
+                <span className="customer-code">
+                  {order.member && order.member.customer_code ? order.member.customer_code : '---'}
+                </span>
+              </div>
+              <div>
+                <span>Mã số thuế: </span>
+                <span className="customer-tax">
+                  {order.member && order.member.tax_code ? order.member.tax_code : '---'}
+                </span>
+              </div>
             </React.Fragment>
           ),
           orderDate: moment.unix(Number(order.date_order)).format('hh:mm:ss A, DD-MM-YYYY'),
@@ -331,6 +341,28 @@ function OrderList() {
           _cellProps: { id: { scope: 'row' } },
         }))
       : []
+
+  const years = React.useMemo(() => {
+    const end = getYear(new Date())
+    return Array.from({ length: end - 1990 + 1 }, (_, i) => 1990 + i)
+  }, [])
+  const months = React.useMemo(
+    () => [
+      'Tháng 1',
+      'Tháng 2',
+      'Tháng 3',
+      'Tháng 4',
+      'Tháng 5',
+      'Tháng 6',
+      'Tháng 7',
+      'Tháng 8',
+      'Tháng 9',
+      'Tháng 10',
+      'Tháng 11',
+      'Tháng 12',
+    ],
+    [],
+  )
 
   return (
     <CContainer>
@@ -397,7 +429,7 @@ function OrderList() {
                           value={choosenStatus}
                           onChange={(e) => setChoosenStatus(e.target.value)}
                         />
-                        <CFormSelect
+                        {/* <CFormSelect
                           className="component-size w-25 ms-2"
                           aria-label="Chọn yêu cầu lọc"
                           options={[
@@ -407,7 +439,7 @@ function OrderList() {
                           ]}
                           value={typeMember}
                           onChange={(e) => setTypeMember(e.target.value)}
-                        />
+                        /> */}
                       </div>
                     </td>
                   </tr>
@@ -422,6 +454,67 @@ function OrderList() {
                           dateFormat={'dd-MM-yyyy'}
                           selected={startDate}
                           onChange={handleStartDateChange}
+                          locale="vi"
+                          renderCustomHeader={({
+                            date,
+                            changeYear,
+                            changeMonth,
+                            decreaseMonth,
+                            increaseMonth,
+                            prevMonthButtonDisabled,
+                            nextMonthButtonDisabled,
+                          }) => (
+                            <div
+                              style={{
+                                margin: 10,
+                                display: 'flex',
+                                justifyContent: 'center',
+                                gap: 8,
+                                alignItems: 'center',
+                              }}
+                            >
+                              <button
+                                onClick={decreaseMonth}
+                                disabled={prevMonthButtonDisabled}
+                                type="button"
+                                className="react-datepicker__navigation react-datepicker__navigation--previous"
+                              >
+                                {'<'}
+                              </button>
+                              <select
+                                value={getYear(date)}
+                                onChange={({ target: { value } }) =>
+                                  changeYear(parseInt(value, 10))
+                                }
+                              >
+                                {years.map((option) => (
+                                  <option key={option} value={option}>
+                                    {option}
+                                  </option>
+                                ))}
+                              </select>
+                              <select
+                                value={months[getMonth(date)]}
+                                onChange={({ target: { value } }) =>
+                                  changeMonth(months.indexOf(value))
+                                }
+                              >
+                                {months.map((option) => (
+                                  <option key={option} value={option}>
+                                    {option}
+                                  </option>
+                                ))}
+                              </select>
+                              <button
+                                onClick={increaseMonth}
+                                disabled={nextMonthButtonDisabled}
+                                type="button"
+                                className="react-datepicker__navigation react-datepicker__navigation--next"
+                              >
+                                {'>'}
+                              </button>
+                            </div>
+                          )}
                         />
                         <p className="datepicker-label">{'đến ngày'}</p>
                         <DatePicker
@@ -430,6 +523,67 @@ function OrderList() {
                           dateFormat={'dd-MM-yyyy'}
                           selected={endDate}
                           onChange={handleEndDateChange}
+                          locale="vi"
+                          renderCustomHeader={({
+                            date,
+                            changeYear,
+                            changeMonth,
+                            decreaseMonth,
+                            increaseMonth,
+                            prevMonthButtonDisabled,
+                            nextMonthButtonDisabled,
+                          }) => (
+                            <div
+                              style={{
+                                margin: 10,
+                                display: 'flex',
+                                justifyContent: 'center',
+                                gap: 8,
+                                alignItems: 'center',
+                              }}
+                            >
+                              <button
+                                onClick={decreaseMonth}
+                                disabled={prevMonthButtonDisabled}
+                                type="button"
+                                className="react-datepicker__navigation react-datepicker__navigation--previous"
+                              >
+                                {'<'}
+                              </button>
+                              <select
+                                value={getYear(date)}
+                                onChange={({ target: { value } }) =>
+                                  changeYear(parseInt(value, 10))
+                                }
+                              >
+                                {years.map((option) => (
+                                  <option key={option} value={option}>
+                                    {option}
+                                  </option>
+                                ))}
+                              </select>
+                              <select
+                                value={months[getMonth(date)]}
+                                onChange={({ target: { value } }) =>
+                                  changeMonth(months.indexOf(value))
+                                }
+                              >
+                                {months.map((option) => (
+                                  <option key={option} value={option}>
+                                    {option}
+                                  </option>
+                                ))}
+                              </select>
+                              <button
+                                onClick={increaseMonth}
+                                disabled={nextMonthButtonDisabled}
+                                type="button"
+                                className="react-datepicker__navigation react-datepicker__navigation--next"
+                              >
+                                {'>'}
+                              </button>
+                            </div>
+                          )}
                         />
                       </div>
                       {errors.startDate && <p className="text-danger">{errors.startDate}</p>}

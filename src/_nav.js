@@ -113,6 +113,7 @@ const _nav = [
         name: 'Sản phẩm không đồng bộ',
         to: '/product/out-of-sync',
       },
+
       {
         component: CNavItem,
         name: 'Cấu hình sản phẩm',
@@ -305,6 +306,30 @@ const _nav = [
         component: CNavItem,
         name: 'Quản lý bình luận',
         to: '/comment',
+      },
+    ],
+  },
+
+  {
+    component: CNavGroup,
+    name: 'QUẢN LÝ ĐỐI TÁC',
+    to: '/partner',
+    icon: <CIcon icon={cilPeople} customClassName="nav-icon" />,
+    items: [
+      {
+        component: CNavItem,
+        name: 'Quản lý danh mục',
+        to: '/partner/categories',
+      },
+      {
+        component: CNavItem,
+        name: 'Quản lý bài đăng',
+        to: '/partner/article',
+      },
+      {
+        component: CNavItem,
+        name: 'Thêm mới bài đăng',
+        to: '/partner/article/add',
       },
     ],
   },

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   CButton,
   CCol,
@@ -7,18 +7,18 @@ import {
   CFormInput,
   CFormSelect,
   CFormTextarea,
-  CImage,
   CRow,
   CSpinner,
-  CTable,
+  CCard,
+  CCardBody,
+  CCardHeader,
 } from '@coreui/react'
 
 import { Formik, Form, Field, ErrorMessage } from 'formik'
 import * as Yup from 'yup'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { axiosClient } from '../../axiosConfig'
-import moment from 'moment'
 
 function EditMember() {
   const location = useLocation()
@@ -43,8 +43,23 @@ function EditMember() {
     dob: '',
     point: '',
     pointUsed: '',
-    status: 0,
+    // UI-only fields
+    shippingAddress: '',
+    companyName: '',
+    companyAddress: '',
+    companyEmail: '',
+    companyPhone: '',
+    sapCustomerCode: '',
+    sapCCCode: '',
+    sapTaxCode: '',
+    sapCustomerIdCode: '',
+    supportStaff: [],
+    approvalStatus: 'pending',
+    accountStatus: 'active',
   }
+
+  // keep a copy for reinitializing Formik after fetch
+  const [formInit, setFormInit] = useState(initialValues)
 
   const validationSchema = Yup.object({
     // title: Yup.string().required('Tiêu đề là bắt buộc.'),
@@ -55,24 +70,24 @@ function EditMember() {
     // visible: Yup.string().required('Cho phép hiển thị là bắt buộc.'),
   })
 
-  const fetchDataById = async (setValues) => {
+  const fetchDataById = async () => {
     try {
       const response = await axiosClient.get(`/admin/member/${id}/edit`)
       const data = response.data.member
       if (data) {
-        setValues({
-          userName: data?.username,
-          fullName: data?.full_name,
-          provider: data?.provider,
-          email: data?.email,
-          phone: data?.phone,
-          address: data?.address,
-          gender: data?.gender == 'female' ? 'Nam' : 'Nữ',
-          dob: data?.dateOfBirth,
-          point: response?.data?.orderPoints,
-          pointUsed: response?.data?.accumulatedPoints,
-        })
-        setSelectedFile(data.picture)
+        setFormInit((prev) => ({
+          ...prev,
+          userName: data?.username || '',
+          fullName: data?.full_name || '',
+          provider: data?.provider || '',
+          email: data?.email || '',
+          phone: data?.phone || '',
+          address: data?.address || '',
+          gender: data?.gender == 'female' ? 'Nữ' : 'Nam',
+          dob: data?.dateOfBirth || '',
+          point: response?.data?.orderPoints ?? '',
+          pointUsed: response?.data?.accumulatedPoints ?? '',
+        }))
       } else {
         console.error('No data found for the given ID.')
       }
@@ -86,8 +101,12 @@ function EditMember() {
   }
 
   useEffect(() => {
-    fetchDataById()
-  }, [])
+    // gọi để kiểm tra quyền và lấy dữ liệu, sẽ reinitialize form khi có dữ liệu
+    if (id) {
+      fetchDataById()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id])
 
   const handleSubmit = async (values) => {
     try {
@@ -101,17 +120,16 @@ function EditMember() {
         gender: values.gender,
         dateOfBirth: values.dob,
       })
+
       if (response.data.status === true) {
         toast.success('Cập nhật thông tin thành công')
+      } else if (response.data.status === false && response.data.mess == 'no permission') {
+        setIsPermissionCheck(false)
+        toast.error('Bạn không có quyền thực hiện hành động này')
       } else {
-        console.error('No data found for the given ID.')
+        toast.error('Đã xảy ra lỗi. Vui lòng thử lại!')
       }
-
-      if (response.data.status === false && response.data.mess == 'no permission') {
-        toast.warn('Bạn không có quyền thực hiện tác vụ này!')
-      }
-    } catch (error) {
-      console.error('Put data id member is error', error.message)
+    } catch (e) {
       toast.error('Đã xảy ra lỗi. Vui lòng thử lại!')
     } finally {
       setIsLoading(false)
@@ -121,21 +139,16 @@ function EditMember() {
   return (
     <CContainer>
       {!isPermissionCheck ? (
-        <h5>
-          <div>Bạn không đủ quyền để thao tác trên danh mục quản trị này.</div>
-          <div className="mt-4">
-            Vui lòng quay lại trang chủ <Link to={'/dashboard'}>(Nhấn vào để quay lại)</Link>
-          </div>
-        </h5>
+        <div className="text-danger">Bạn không có quyền truy cập trang này.</div>
       ) : (
         <>
           <CRow className="mb-3">
-            <CCol md={6}>
-              <h2>CHỈNH SỬA THÀNH VIÊN</h2>
+            <CCol>
+              <h3>CẬP NHẬT THÀNH VIÊN</h3>
             </CCol>
-            <CCol md={6}>
+            <CCol md={{ span: 4, offset: 4 }}>
               <div className="d-flex justify-content-end">
-                <Link to={'/member'}>
+                <Link to={`/member`}>
                   <CButton color="primary" type="submit" size="sm">
                     Danh sách
                   </CButton>
@@ -145,160 +158,302 @@ function EditMember() {
           </CRow>
 
           <CRow>
-            <CCol md={8}>
-              <h6>{'Thông tin đăng nhập'}</h6>
-              <Formik
-                initialValues={initialValues}
-                validationSchema={validationSchema}
-                onSubmit={handleSubmit}
-              >
-                {({ setFieldValue, setValues }) => {
-                  useEffect(() => {
-                    fetchDataById(setValues)
-                  }, [setValues, id])
-                  return (
-                    <Form>
-                      <CCol md={12}>
-                        <label htmlFor="userName-input">Tên đăng nhập</label>
-                        <Field name="userName">
-                          {({ field }) => (
-                            <CFormInput
-                              {...field}
-                              disabled
-                              type="text"
-                              id="userName-input"
-                              text="Không thể thay đổi."
+            <Formik
+              initialValues={formInit}
+              enableReinitialize
+              validationSchema={validationSchema}
+              onSubmit={handleSubmit}
+            >
+              {({ values, setFieldValue }) => (
+                <Form>
+                  <CCard className="mb-4 shadow-sm" style={{ borderRadius: 10 }}>
+                    <CCardHeader className="bg-light fw-semibold">
+                      Thông tin khách hàng & Giao hàng
+                    </CCardHeader>
+                    <CCardBody>
+                      <CRow className="g-4">
+                        {/* Thông tin khách hàng */}
+                        <CCol md={6}>
+                          <h6 className="mb-3">Thông tin khách hàng</h6>
+                          <div className="mb-3">
+                            <label htmlFor="userName-input">Tên đăng nhập</label>
+                            <Field name="userName">
+                              {({ field }) => (
+                                <CFormInput
+                                  {...field}
+                                  disabled
+                                  type="text"
+                                  id="userName-input"
+                                  placeholder="Tên đăng nhập"
+                                />
+                              )}
+                            </Field>
+                            <ErrorMessage name="userName" component="div" className="text-danger" />
+                          </div>
+
+                          <div className="mb-3">
+                            <label htmlFor="password-input">Mật khẩu</label>
+                            <Field
+                              name="password"
+                              type="password"
+                              as={CFormInput}
+                              id="password-input"
+                              placeholder="Đổi mật khẩu (tuỳ chọn)"
                             />
-                          )}
-                        </Field>
-                        <ErrorMessage name="userName" component="div" className="text-danger" />
-                      </CCol>
-                      <br />
+                            <small className="text-muted">
+                              Tối thiểu 6 ký tự. Để trống để giữ mật khẩu cũ.
+                            </small>
+                            <ErrorMessage name="password" component="div" className="text-danger" />
+                          </div>
 
-                      <CCol md={12}>
-                        <label htmlFor="password-input">Mật khẩu</label>
-                        <Field
-                          name="password"
-                          type="password"
-                          as={CFormInput}
-                          id="password-input"
-                          text="Tối thiểu 6 ký tự. Nếu mật khẩu rỗng giữ lại mật khẩu cũ."
-                        />
-                        <ErrorMessage name="password" component="div" className="text-danger" />
-                      </CCol>
-                      <br />
+                          <div className="mb-3">
+                            <label htmlFor="provider-input">Hình thức đăng nhập</label>
+                            <Field
+                              name="provider"
+                              type="text"
+                              as={CFormInput}
+                              id="provider-input"
+                              disabled
+                            />
+                          </div>
 
-                      <h6>Thông tin tài khoản</h6>
-                      <br />
+                          <div className="mb-3">
+                            <label htmlFor="fullName-input">Họ tên</label>
+                            <Field
+                              name="fullName"
+                              type="text"
+                              as={CFormInput}
+                              id="fullName-input"
+                            />
+                            <ErrorMessage name="fullName" component="div" className="text-danger" />
+                          </div>
 
-                      <CCol md={12}>
-                        <label htmlFor="provider-input">Hình thức đăng nhập</label>
-                        <Field
-                          name="provider"
-                          type="text"
-                          as={CFormInput}
-                          id="provider-input"
-                          disabled
-                        />
-                        <ErrorMessage name="provider" component="div" className="text-danger" />
-                      </CCol>
-                      <br />
+                          <div className="mb-3">
+                            <label htmlFor="gender-input">Giới tính</label>
+                            <Field
+                              as={CFormSelect}
+                              name="gender"
+                              id="gender-input"
+                              options={[
+                                { label: 'Nam', value: 'Nam' },
+                                { label: 'Nữ', value: 'Nữ' },
+                              ]}
+                            />
+                          </div>
 
-                      <CCol md={12}>
-                        <label htmlFor="fullName-input">Họ tên</label>
-                        <Field name="fullName" type="text" as={CFormInput} id="fullName-input" />
-                        <ErrorMessage name="fullName" component="div" className="text-danger" />
-                      </CCol>
-                      <br />
-                      <CCol md={12}>
-                        <label htmlFor="email-input">Thư điện tử</label>
-                        <Field name="email" type="text" as={CFormInput} id="email-input" />
-                        <ErrorMessage name="email" component="div" className="text-danger" />
-                      </CCol>
-                      <br />
-                      <CCol md={12}>
-                        <label htmlFor="phone-input">Điện thoại</label>
-                        <Field name="phone" type="text" as={CFormInput} id="phone-input" />
-                        <ErrorMessage name="phone" component="div" className="text-danger" />
-                      </CCol>
-                      <br />
-                      <CCol md={12}>
-                        <label htmlFor="address-input">Địa chỉ</label>
-                        <Field name="address" type="text" as={CFormInput} id="address-input" />
-                        <ErrorMessage name="address" component="div" className="text-danger" />
-                      </CCol>
-                      <br />
-                      <CCol md={12}>
-                        <label htmlFor="gender-input">Giới tính</label>
-                        <Field name="gender" type="text" as={CFormInput} id="gender-input" />
-                        <ErrorMessage name="gender" component="div" className="text-danger" />
-                      </CCol>
-                      <br />
-                      <CCol md={12}>
-                        <label htmlFor="dob-input">Ngày sinh</label>
-                        <Field
-                          name="dob"
-                          type="text"
-                          as={CFormInput}
-                          id="dob-input"
-                          text={'Định dạng ngày sinh: DD/MM/YYYY'}
-                        />
-                        <ErrorMessage name="dob" component="div" className="text-danger" />
-                      </CCol>
-                      <br />
+                          <div className="mb-3">
+                            <label htmlFor="dob-input">Ngày sinh</label>
+                            <Field
+                              name="dob"
+                              type="text"
+                              as={CFormInput}
+                              id="dob-input"
+                              placeholder="DD/MM/YYYY"
+                            />
+                          </div>
 
-                      <h6>Thông tin khác</h6>
-                      <CCol md={12}>
-                        <label htmlFor="point-input">Điểm</label>
-                        <Field name="point" type="text" as={CFormInput} id="point-input" />
-                        <ErrorMessage
-                          name="point"
-                          component="div"
-                          className="text-danger"
-                          text={'Điểm tích lũy khi mua hàng.'}
-                        />
-                      </CCol>
-                      <br />
-                      <CCol md={12}>
-                        <label htmlFor="pointUsed-input">Điểm đã sử dụng</label>
-                        <Field name="pointUsed" type="text" as={CFormInput} id="pointUsed-input" />
-                        <ErrorMessage
-                          name="pointUsed"
-                          component="div"
-                          className="text-danger"
-                          text={'Điểm thành viên đã sử dụng.'}
-                        />
-                      </CCol>
-                      <br />
+                          <div className="mb-3">
+                            <label htmlFor="email-input">Thư điện tử</label>
+                            <Field name="email" type="text" as={CFormInput} id="email-input" />
+                          </div>
 
-                      <CCol md={12}>
-                        <label htmlFor="status-select">Trạng thái tài khoản</label>
-                        <Field
-                          name="status"
-                          as={CFormSelect}
-                          id="status-select"
-                          options={[{ label: 'Đang hoạt động', value: '1' }]}
-                        />
-                        <ErrorMessage name="status" component="div" className="text-danger" />
-                      </CCol>
-                      <br />
+                          <div className="mb-3">
+                            <label htmlFor="phone-input">Điện thoại</label>
+                            <Field name="phone" type="text" as={CFormInput} id="phone-input" />
+                          </div>
+                        </CCol>
 
-                      <CCol xs={12}>
-                        <CButton color="primary" type="submit" size="sm" disabled={isLoading}>
-                          {isLoading ? (
-                            <>
-                              <CSpinner size="sm"></CSpinner> Đang cập nhật...
-                            </>
-                          ) : (
-                            'Cập nhật'
-                          )}
-                        </CButton>
-                      </CCol>
-                    </Form>
-                  )
-                }}
-              </Formik>
-            </CCol>
+                        {/* Thông tin nhận hàng */}
+                        <CCol md={6}>
+                          <h6 className="mb-3">Thông tin nhận hàng</h6>
+                          <div className="mb-3">
+                            <label htmlFor="address-input">Địa chỉ nhận hàng</label>
+                            <Field name="address" type="text" as={CFormInput} id="address-input" />
+                            <ErrorMessage name="address" component="div" className="text-danger" />
+                          </div>
+                          <div className="mb-3">
+                            <label htmlFor="shippingAddress-input">Ghi chú giao hàng</label>
+                            <Field
+                              name="shippingAddress"
+                              as={CFormTextarea}
+                              id="shippingAddress-input"
+                              rows={4}
+                              placeholder="Ghi chú giao hàng (tuỳ chọn)"
+                            />
+                          </div>
+
+                          <div className="mb-3">
+                            <label htmlFor="point-input">Điểm tích luỹ</label>
+                            <Field name="point" type="text" as={CFormInput} id="point-input" />
+                          </div>
+                          <div className="mb-3">
+                            <label htmlFor="pointUsed-input">Điểm đã sử dụng</label>
+                            <Field
+                              name="pointUsed"
+                              type="text"
+                              as={CFormInput}
+                              id="pointUsed-input"
+                            />
+                          </div>
+                        </CCol>
+                      </CRow>
+                    </CCardBody>
+                  </CCard>
+
+                  <CCard className="mb-4 shadow-sm" style={{ borderRadius: 10 }}>
+                    <CCardHeader className="bg-light fw-semibold">
+                      Thông tin công ty & Đồng bộ SAP
+                    </CCardHeader>
+                    <CCardBody>
+                      <CRow className="g-4">
+                        {/* Thông tin công ty */}
+                        <CCol md={6}>
+                          <h6 className="mb-3">Thông tin công ty</h6>
+                          <div className="mb-3">
+                            <label htmlFor="companyName-input">Tên Công Ty</label>
+                            <Field name="companyName" as={CFormInput} id="companyName-input" />
+                          </div>
+                          <div className="mb-3">
+                            <label htmlFor="companyAddress-input">Địa chỉ Công Ty</label>
+                            <Field
+                              name="companyAddress"
+                              as={CFormInput}
+                              id="companyAddress-input"
+                            />
+                          </div>
+                          <div className="mb-3">
+                            <label htmlFor="companyEmail-input">Email Công Ty</label>
+                            <Field name="companyEmail" as={CFormInput} id="companyEmail-input" />
+                          </div>
+                          <div className="mb-3">
+                            <label htmlFor="companyPhone-input">Số Điện Thoại Công Ty</label>
+                            <Field name="companyPhone" as={CFormInput} id="companyPhone-input" />
+                          </div>
+                        </CCol>
+
+                        {/* Thông tin đồng bộ SAP */}
+                        <CCol md={6}>
+                          <h6 className="mb-3">Thông tin đồng bộ SAP</h6>
+                          <div className="mb-3">
+                            <label htmlFor="sapCustomerCode-input">Mã Khách Hàng SAP</label>
+                            <Field
+                              name="sapCustomerCode"
+                              as={CFormInput}
+                              id="sapCustomerCode-input"
+                            />
+                          </div>
+                          <div className="mb-3">
+                            <label htmlFor="sapCCCode-input">Mã CC*</label>
+                            <Field name="sapCCCode" as={CFormInput} id="sapCCCode-input" />
+                          </div>
+                          <div className="mb-3">
+                            <label htmlFor="sapTaxCode-input">Mã Số Thuế</label>
+                            <Field name="sapTaxCode" as={CFormInput} id="sapTaxCode-input" />
+                          </div>
+                          <div className="mb-3">
+                            <label htmlFor="sapCustomerIdCode-input">
+                              Mã Khách Hàng Định Danh*
+                            </label>
+                            <Field
+                              name="sapCustomerIdCode"
+                              as={CFormInput}
+                              id="sapCustomerIdCode-input"
+                            />
+                          </div>
+                        </CCol>
+                      </CRow>
+                    </CCardBody>
+                  </CCard>
+
+                  <CCard className="mb-4 shadow-sm" style={{ borderRadius: 10 }}>
+                    <CCardHeader className="bg-light fw-semibold">
+                      Nhân viên support khách hàng
+                    </CCardHeader>
+                    <CCardBody>
+                      <CRow className="row-cols-1 row-cols-md-3 row-cols-lg-4 g-3">
+                        {[
+                          'NGUYỄN CHÍ ĐẠO',
+                          'PHẠM ĐỖ THANH Mr.THẾ',
+                          'Ms Lê Ngọc Thanh Vi',
+                          'MR TRẦN NGỌC HẢI',
+                          'ĐỖ MINH KHÁNH',
+                          'Huỳnh Nhật Long',
+                          'HỒ MINH TÂN',
+                          'TRỊNH HOÀI THƯƠNG',
+                          'Ms. Chi',
+                          'BÙI MINH SANG',
+                          'Thiên-KDS52',
+                          'NGUYỄN THỊ KIM OANH',
+                          'NGUYỄN HỮU SINH',
+                          'Mr. Hoàng Minh',
+                          'Mr. Tuấn An',
+                        ].map((name, idx) => (
+                          <CCol key={idx}>
+                            <CFormCheck
+                              id={`staff_${idx}`}
+                              label={name}
+                              checked={values.supportStaff?.includes(name)}
+                              onChange={(e) => {
+                                const checked = e.target.checked
+                                const current = new Set(values.supportStaff || [])
+                                if (checked) current.add(name)
+                                else current.delete(name)
+                                setFieldValue('supportStaff', Array.from(current))
+                              }}
+                            />
+                          </CCol>
+                        ))}
+                      </CRow>
+                    </CCardBody>
+                  </CCard>
+
+                  <CCard className="mb-4 shadow-sm" style={{ borderRadius: 10 }}>
+                    <CCardHeader className="bg-light fw-semibold">Kích hoạt tài khoản</CCardHeader>
+                    <CCardBody>
+                      <CRow className="g-3">
+                        <CCol md={6}>
+                          <label htmlFor="approvalStatus-select">Trạng thái duyệt</label>
+                          <Field
+                            name="approvalStatus"
+                            as={CFormSelect}
+                            id="approvalStatus-select"
+                            options={[
+                              { label: 'Chờ kích hoạt', value: 'pending' },
+                              { label: 'Đã duyệt', value: 'approved' },
+                              { label: 'Từ chối', value: 'rejected' },
+                            ]}
+                          />
+                        </CCol>
+                        <CCol md={6}>
+                          <label htmlFor="accountStatus-select">Trạng thái hoạt động</label>
+                          <Field
+                            name="accountStatus"
+                            as={CFormSelect}
+                            id="accountStatus-select"
+                            options={[
+                              { label: 'Đang hoạt động', value: 'active' },
+                              { label: 'Bị khóa', value: 'locked' },
+                            ]}
+                          />
+                        </CCol>
+                      </CRow>
+                    </CCardBody>
+                  </CCard>
+
+                  <div className="d-flex gap-2">
+                    <CButton color="primary" type="submit" size="sm" disabled={isLoading}>
+                      {isLoading ? (
+                        <>
+                          <CSpinner size="sm" /> Đang cập nhật...
+                        </>
+                      ) : (
+                        'Cập nhật'
+                      )}
+                    </CButton>
+                  </div>
+                </Form>
+              )}
+            </Formik>
           </CRow>
         </>
       )}

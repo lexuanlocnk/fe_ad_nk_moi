@@ -76,7 +76,9 @@ function AdminList() {
     email: '',
     phone: '',
     displayName: '',
-    role: '',
+    role: '', // quyền hệ thống
+    position: '', // chức vụ (quản lý/nhân viên)
+    saleId: '', // SaleID
   }
 
   const validationSchema = Yup.object({
@@ -86,6 +88,8 @@ function AdminList() {
     phone: Yup.string().required('Số điện thoại là bắt buộc.'),
     displayName: Yup.string().required('Tên hiển thị là bắt buộc.'),
     role: Yup.string().required('Vai trò là bắt buộc.'),
+    position: Yup.string().required('Chức vụ là bắt buộc.'),
+    saleId: Yup.string(), // Nếu muốn bắt buộc: .required('SaleID là bắt buộc.')
   })
 
   useEffect(() => {
@@ -543,6 +547,29 @@ function AdminList() {
                           ]}
                         />
                         <ErrorMessage name="role" component="div" className="text-danger" />
+                      </CCol>
+                      <br />
+
+                      <CCol md={12}>
+                        <label htmlFor="position-select">Chức vụ</label>
+                        <Field
+                          name="position"
+                          as={CFormSelect}
+                          id="position-select"
+                          options={[
+                            { label: 'Chọn chức vụ', value: '', disabled: true },
+                            { label: 'Quản lý', value: 'manager' },
+                            { label: 'Nhân viên', value: 'staff' },
+                          ]}
+                        />
+                        <ErrorMessage name="position" component="div" className="text-danger" />
+                      </CCol>
+                      <br />
+
+                      <CCol md={12}>
+                        <label htmlFor="saleId-input">SaleID</label>
+                        <Field name="saleId" type="text" as={CFormInput} id="saleId-input" />
+                        <ErrorMessage name="saleId" component="div" className="text-danger" />
                       </CCol>
                       <br />
 

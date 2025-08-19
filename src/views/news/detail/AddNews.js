@@ -36,15 +36,28 @@ function AddNews() {
     metaKeyword: '',
     metaDesc: '',
     visible: 0,
+    categories: [],
   }
 
   const validationSchema = Yup.object({
-    // title: Yup.string().required('Tiêu đề là bắt buộc.'),
-    // friendlyUrl: Yup.string().required('Chuỗi đường dẫn là bắt buộc.'),
-    // pageTitle: Yup.string().required('Tiêu đề bài viết là bắt buộc.'),
-    // metaKeyword: Yup.string().required('Meta keywords là bắt buộc.'),
-    // metaDesc: Yup.string().required('Meta description là bắt buộc.'),
-    // visible: Yup.string().required('Cho phép hiển thị là bắt buộc.'),
+    title: Yup.string().required('Vui lòng nhập tiêu đề'),
+    // desc: không bắt buộc
+    friendlyUrl: Yup.string()
+      .matches(/^[a-z0-9-]+$/, 'Chuỗi dẫn tĩnh chỉ bao gồm chữ thường, số và dấu gạch ngang (-)')
+      .required('Vui lòng nhập chuỗi đường dẫn'),
+    pageTitle: Yup.string()
+      .max(60, 'Tiêu đề trang tối đa 60 ký tự')
+      .required('Vui lòng nhập tiêu đề trang'),
+    metaKeyword: Yup.string()
+      .min(20, 'Meta keywords tối thiểu 20 ký tự')
+      .max(150, 'Meta keywords tối đa 150 ký tự')
+      .matches(/,/g, 'Meta keywords phải có ít nhất 1 dấu phẩy (,)'),
+    metaDesc: Yup.string()
+      .min(50, 'Meta description tối thiểu 50 ký tự')
+      .max(200, 'Meta description tối đa 200 ký tự')
+      .required('Vui lòng nhập mô tả meta'),
+    categories: Yup.array().min(1, 'Vui lòng chọn ít nhất 1 danh mục'),
+    visible: Yup.string().required('Vui lòng chọn trạng thái hiển thị'),
   })
 
   const fetchDataNewsCategory = async () => {
@@ -63,6 +76,10 @@ function AddNews() {
   }, [])
 
   const handleSubmit = async (values) => {
+    if (!values.categories || values.categories.length === 0) {
+      toast.error('Vui lòng chọn ít nhất 1 danh mục')
+      return
+    }
     try {
       setIsLoading(true)
       const response = await axiosClient.post('admin/news', {
@@ -73,7 +90,7 @@ function AddNews() {
         friendly_title: values.pageTitle,
         metakey: values.metaKeyword,
         metadesc: values.metaDesc,
-        cat_id: selectedCateCheckbox,
+        cat_id: values.categories,
         picture: selectedFile,
         display: values.visible,
       })
@@ -149,6 +166,16 @@ function AddNews() {
             onSubmit={handleSubmit}
           >
             {({ setFieldValue, setValues, values }) => {
+              // Đồng bộ selectedCateCheckbox với values.categories
+              const handleCategoryChange = (catId, checked) => {
+                let next = []
+                if (checked) {
+                  next = [...values.categories, catId]
+                } else {
+                  next = values.categories.filter((id) => id !== catId)
+                }
+                setFieldValue('categories', next)
+              }
               return (
                 <Form>
                   <CRow>
@@ -200,7 +227,7 @@ function AddNews() {
                           type="text"
                           as={CFormInput}
                           id="url-input"
-                          text="Chuỗi dẫn tĩnh là phiên bản của tên hợp chuẩn với Đường dẫn (URL). Chuỗi này bao gồm chữ cái thường, số và dấu gạch ngang (-). VD: vi-tinh-nguyen-kim-to-chuc-su-kien-tri-an-dip-20-nam-thanh-lap"
+                          text="Chuỗi dẫn tĩnh là phiên bản của tên hợp chuẩn với Đường dẫn (URL). Chỉ bao gồm chữ cái thường, số và dấu gạch ngang (-). VD: vi-tinh-nguyen-kim-to-chuc-su-kien-tri-an-dip-20-nam-thanh-lap"
                         />
                         <ErrorMessage name="friendlyUrl" component="div" className="text-danger" />
                       </CCol>
@@ -212,7 +239,7 @@ function AddNews() {
                           type="text"
                           as={CFormInput}
                           id="pageTitle-input"
-                          text="Độ dài của tiêu đề trang tối đa 60 ký tự."
+                          text="Tiêu đề trang tối đa 60 ký tự."
                         />
                         <ErrorMessage name="pageTitle" component="div" className="text-danger" />
                       </CCol>
@@ -224,7 +251,7 @@ function AddNews() {
                           type="text"
                           as={CFormTextarea}
                           id="metaKeyword-input"
-                          text="Độ dài của meta keywords chuẩn là từ 100 đến 150 ký tự, trong đó có ít nhất 4 dấu phẩy (,)."
+                          text="Meta keywords từ 20-150 ký tự, có ít nhất 1 dấu phẩy (,) để phân tách từ khóa."
                         />
                         <ErrorMessage name="metaKeyword" component="div" className="text-danger" />
                       </CCol>
@@ -236,7 +263,7 @@ function AddNews() {
                           type="text"
                           as={CFormTextarea}
                           id="metaDesc-input"
-                          text="Thẻ meta description chỉ nên dài khoảng 140 kí tự để có thể hiển thị hết được trên Google. Tối đa 200 ký tự."
+                          text="Meta description nên dài khoảng 140 ký tự, tối đa 200 ký tự."
                         />
                         <ErrorMessage name="metaDesc" component="div" className="text-danger" />
                       </CCol>
@@ -247,7 +274,7 @@ function AddNews() {
                       <CCol
                         md={12}
                         className="border bg-white p-2 overflow-scroll"
-                        style={{ height: 'auto' }}
+                        style={{ height: 'auto', maxHeight: 400 }}
                       >
                         <label
                           className="pb-2 mb-2 w-100"
@@ -258,9 +285,8 @@ function AddNews() {
                           }}
                           htmlFor="visible-input"
                         >
-                          Danh mục bài viết
+                          Danh mục bài viết <span className="text-danger">*</span>
                         </label>
-
                         {dataNewsCategory &&
                           dataNewsCategory?.length > 0 &&
                           dataNewsCategory.map((item) => (
@@ -271,25 +297,17 @@ function AddNews() {
                               }}
                               key={item?.cat_id}
                               aria-label="Default select example"
-                              defaultChecked={item?.cat_id}
                               id={`flexCheckDefault_${item?.cat_id}`}
                               value={item?.cat_id}
-                              checked={selectedCateCheckbox.includes(item?.cat_id)}
+                              checked={values.categories.includes(item?.cat_id)}
                               label={item?.news_category_desc?.cat_name}
                               onChange={(e) => {
-                                const catId = item?.cat_id
-                                const isChecked = e.target.checked
-                                if (isChecked) {
-                                  setSelectedCateCheckbox([...selectedCateCheckbox, catId])
-                                } else {
-                                  setSelectedCateCheckbox(
-                                    selectedCateCheckbox.filter((id) => id !== catId),
-                                  )
-                                }
+                                handleCategoryChange(item?.cat_id, e.target.checked)
                               }}
                             />
                           ))}
                       </CCol>
+                      <ErrorMessage name="categories" component="div" className="text-danger" />
                       <br />
 
                       <CCol md={12}>
