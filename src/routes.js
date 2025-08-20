@@ -96,6 +96,8 @@ const EditGift = React.lazy(() => import('./views/gift/EditGift'))
 const Member = React.lazy(() => import('./views/member/Member'))
 const EditMember = React.lazy(() => import('./views/member/EditMember'))
 
+const MemberCreate = React.lazy(() => import('./views/member/MemberCreate'))
+
 // PROMOTION
 const PromotionDetail = React.lazy(
   () => import('./views/promotion/promotionDetail/promotionDetail'),
@@ -147,6 +149,8 @@ const EditAdvertise = React.lazy(() => import('./views/advertise/detail/EditAdve
 const Introduce = React.lazy(() => import('./views/introduce/Introduce'))
 const AddIntroduce = React.lazy(() => import('./views/introduce/AddIntroduce'))
 const EditIntroduce = React.lazy(() => import('./views/introduce/EditIntroduce'))
+
+const VideoPress = React.lazy(() => import('./views/introduce/VideoPress.js'))
 
 // SERVICE
 const Service = React.lazy(() => import('./views/services/Service'))
@@ -506,6 +510,13 @@ const routes = [
     exact: true,
   },
 
+  {
+    path: '/member/create',
+    name: 'CreateMember',
+    element: MemberCreate,
+    exact: true,
+  },
+
   //promotion
   { path: '/promotion-detail', name: 'Promotion', element: PromotionDetail, exact: true },
   {
@@ -625,6 +636,14 @@ const routes = [
     path: 'about/edit',
     name: 'EditIntroduce',
     element: EditIntroduce,
+    exact: true,
+  },
+
+  // video and press
+  {
+    path: '/about/video',
+    name: 'VideoPress',
+    element: VideoPress,
     exact: true,
   },
 
