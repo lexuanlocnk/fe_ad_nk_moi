@@ -26,7 +26,6 @@ function Member() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
 
-  // Lấy giá trị `page` từ URL hoặc mặc định là 1
   const pageFromUrl = parseInt(searchParams.get('page')) || 1
   const [pageNumber, setPageNumber] = useState(pageFromUrl)
 
@@ -59,8 +58,8 @@ function Member() {
       const response = await axiosClient.get(`admin/member?page=${pageNumber}&data=${dataSearch}`)
 
       if (response.data.status === true) {
-        setMemberData(response.data.data)
-        setCountMember(response.data.countMember)
+        setMemberData(response.data.data?.items)
+        setCountMember(response.data.data?.pagination.total || 0)
       }
 
       if (response.data.status === false && response.data.mess == 'no permission') {
@@ -127,7 +126,7 @@ function Member() {
     },
     { key: 'username', label: 'Username' },
     { key: 'customerInfo', label: 'Thông tin khách hàng' },
-    { key: 'orderYet', label: 'Đơn hàng' },
+    { key: 'support', label: 'Nhân viên hỗ trợ' },
     { key: 'createDate', label: 'Ngày đăng ký' },
     { key: 'status', label: 'Trạng thái tài khoản' },
     { key: 'actions', label: 'Tác vụ' },
@@ -144,12 +143,12 @@ function Member() {
               value={customer?.id}
               checked={selectedCheckbox.includes(customer?.id)}
               onChange={(e) => {
-                const giftId = customer?.id
+                const customerId = customer?.id
                 const isChecked = e.target.checked
                 if (isChecked) {
-                  setSelectedCheckbox([...selectedCheckbox, giftId])
+                  setSelectedCheckbox([...selectedCheckbox, customerId])
                 } else {
-                  setSelectedCheckbox(selectedCheckbox.filter((id) => id !== giftId))
+                  setSelectedCheckbox(selectedCheckbox.filter((id) => id !== customerId))
                 }
               }}
             />
@@ -162,20 +161,24 @@ function Member() {
                 <span className="customer-name">{customer?.full_name}</span>
               </div>
               <div>
-                <span>Điểm tích lũy: </span>
-                <span className="customer-pointsUsed">{customer?.orderPoints}</span>
+                <span>Mã KH: </span>
+                <span className="customer-name">{customer?.member_code}</span>
               </div>
               <div>
-                <span>Điểm đã sử dụng: </span>
-                <span className="customer-pointsAccumulated">
-                  {customer?.accumulatedPoints === null ? 0 : customer?.accumulatedPoints}
-                </span>
+                <span>Công ty: </span>
+                <span className="customer-name">{customer?.company_name}</span>
+              </div>
+              <div>
+                <span>Mã số thuế: </span>
+                <span className="customer-name">{customer?.tax_code}</span>
               </div>
             </React.Fragment>
           ),
-          orderYet: (
+          support: (
             <span className="customer-order">
-              {customer.order_sum > 0 ? 'Đã từng đặt' : 'Chưa có đơn'}
+              {customer?.sale_admins?.length > 0
+                ? customer?.sale_admins?.map((admin) => `${admin.name}`).join(', ')
+                : 'Chưa có nhân viên hỗ trợ'}
             </span>
           ),
           createDate: (
@@ -184,7 +187,11 @@ function Member() {
             </span>
           ),
 
-          status: <span className="customer-status">{`[Đang hoạt động]`}</span>,
+          status: (
+            <span className="customer-status">
+              {customer?.is_blocked === 0 ? '[Đang hoạt động]' : '[Đã bị khóa]'}
+            </span>
+          ),
           actions: (
             <div style={{ width: 60 }}>
               <button
